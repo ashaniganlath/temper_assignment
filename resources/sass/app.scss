@@ -1,0 +1,12 @@
+//tailwind css
+@tailwind preflight;
+
+@import "components/custom";
+
+@tailwind utilities;
+
+// Fonts
+//@import url('https://fonts.googleapis.com/css?family=Lato');
+
+//elements ui
+@import "element-variables";
