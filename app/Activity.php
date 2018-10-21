@@ -17,7 +17,9 @@ class Activity extends Model
     public function scopeWeekly(Builder $query)
     {
         $query->selectRaw('*, COUNT(*) as count')
-            ->fromSub('(SELECT onboarding_percentage, WEEK(created_at) as week FROM activity_log)', 'w')
-            ->groupBy(['w.week', 'w.onboarding_percentage']);
+            ->fromSub('(SELECT onboarding_percentage, WEEK(created_at, 1) as week FROM activity_log)', 'w')
+            ->groupBy(['w.week', 'w.onboarding_percentage'])
+            ->orderBy('w.week')
+            ->orderBy('w.onboarding_percentage');
     }
 }
