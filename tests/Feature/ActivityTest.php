@@ -16,9 +16,7 @@ class ActivityTest extends TestCase
         $this->seed(\ActivityLogTestingSeeder::class);
     }
 
-    /**
-     * @test
-     */
+    /** @test */
     public function is_data_grouped_by_week()
     {
         $response = $this->json('GET', '/api/activities');
@@ -26,14 +24,14 @@ class ActivityTest extends TestCase
         $response->assertStatus(200);
 
         $this->assertCount(2, $response->json());
-        $this->assertArraySubset([
+        $this->assertEquals([
             [
                 'name' => 'Week 1',
-                'data' => [100, 67],
+                'data' => [100, 100, 33, 33, 0, 0, 0, 0],
             ],
             [
                 'name' => 'Week 2',
-                'data' => [100],
+                'data' => [100, 100, 100, 67, 67, 67, 67, 67],
             ],
         ], $response->json());
     }
