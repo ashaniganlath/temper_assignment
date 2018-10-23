@@ -10,6 +10,9 @@ class ActivityRepository
     /** @var array */
     protected $percentages;
 
+    /** @var Collection */
+    public $weeklyData;
+
     public function __construct()
     {
         $this->percentages = config('temper.onboarding_percentages');
@@ -21,48 +24,61 @@ class ActivityRepository
             ->get()
             ->groupBy('week')
             ->map(function ($weeklyData, $key) {
-                $weeklyData = $this->calculateTotalCountPerStep($this->addMissingPercentages($this->filterOnboardingPercentages($weeklyData)));
+                $this->setWeeklyData($weeklyData);
+
+                $this->dropUnusedOnBoardingPercentageData()
+                    ->addMissingOnBoardingPercentageData()
+                    ->calculateTotalCountPerWeeklyStep()
+                    ->fetchWeeklyPercentagesPerStep();
 
                 return [
                     'name' => 'Week ' . $key,
-                    'data' => $this->fetchWeeklyPercentagesPerStep($weeklyData)
+                    'data' => $this->getWeeklyData()
                 ];
             })->values();
     }
 
-    public function filterOnboardingPercentages(Collection $weeklyData): Collection
+    public function setWeeklyData(Collection $weeklyData)
     {
-        return $weeklyData->filter(function ($stepData) {
-            return (in_array($stepData['onboarding_percentage'], $this->percentages));
-        });
+        $this->weeklyData = $weeklyData;
     }
 
-    public function addMissingPercentages(Collection $weeklyData): Collection
+    public function getWeeklyData(): Collection
     {
-        $missingPercentages = collect($this->percentages)->diff($weeklyData->pluck('onboarding_percentage'));
+        return $this->weeklyData;
+    }
 
-        $missingPercentages->each(function ($percentage) use ($weeklyData) {
+    public function dropUnusedOnBoardingPercentageData(): ActivityRepository
+    {
+        $this->weeklyData = $this->weeklyData->dropUnusedOnBoardingPercentageData($this->percentages);
+
+        return $this;
+    }
+
+    public function addMissingOnBoardingPercentageData(): ActivityRepository
+    {
+        $missingPercentages = collect($this->percentages)->diff($this->weeklyData->pluck('onboarding_percentage'));
+
+        $missingPercentages->each(function ($percentage) {
 
             $stepData = new Activity();
             $stepData->onboarding_percentage = $percentage;
-            $stepData->week = $weeklyData->first()['week'];
+            $stepData->week = $this->weeklyData->first()['week'];
             $stepData->count = 0;
 
-            $weeklyData->push($stepData);
+            $this->weeklyData->push($stepData);
         });
 
-        return $weeklyData->sortBy('onboarding_percentage')->values();
+        $this->weeklyData = $this->weeklyData->sortBy('onboarding_percentage')->values();
+
+        return $this;
     }
 
-    public function calculateTotalCountPerStep(Collection $weeklyData): Collection
+    public function calculateTotalCountPerWeeklyStep(): ActivityRepository
     {
-        return $weeklyData->map(function ($stepData) use ($weeklyData) {
-            $stepData['totalCount'] = $weeklyData
-                    ->where('onboarding_percentage', '>', $stepData['onboarding_percentage'])
-                    ->sum('count') + $stepData['count'];
+        $this->weeklyData = $this->weeklyData->calculateTotalCountPerWeeklyStep();
 
-            return $stepData;
-        })->values();
+        return $this;
     }
 
      public function calculatePercentage($stepCount, $weeklyCount): float
@@ -70,10 +86,12 @@ class ActivityRepository
          return round(($stepCount / $weeklyCount) * 100);
      }
 
-     private function fetchWeeklyPercentagesPerStep($weeklyData): Collection
+     private function fetchWeeklyPercentagesPerStep(): ActivityRepository
      {
-         return $weeklyData->map(function ($stepData) use ($weeklyData) {
-             return $this->calculatePercentage($stepData->totalCount, $weeklyData->sum('count'));
+         $this->weeklyData = $this->weeklyData->map(function ($stepData) {
+             return $this->calculatePercentage($stepData->totalCount, $this->weeklyData->sum('count'));
          });
+
+         return $this;
      }
 }

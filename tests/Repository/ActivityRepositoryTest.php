@@ -31,6 +31,32 @@ class ActivityRepositoryTest extends TestCase
     }
 
     /** @test */
+    public function is_weekly_data_set()
+    {
+        $weeklyData = [
+            [
+                'onboarding_percentage' => 20,
+                'week'                  => 1,
+                'count'                 => 2,
+            ],
+            [
+                'onboarding_percentage' => 50,
+                'week'                  => 1,
+                'count'                 => 1,
+            ],
+            [
+                'onboarding_percentage' => 65,
+                'week'                  => 1,
+                'count'                 => 10,
+            ],
+        ];
+
+        $this->repository->setWeeklyData(collect($weeklyData));
+
+        $this->assertEquals($weeklyData, $this->repository->weeklyData->toArray());
+    }
+
+    /** @test */
     public function is_weekly_data_filtered_for_unused_percentages()
     {
         $weeklyData = [
@@ -51,6 +77,8 @@ class ActivityRepositoryTest extends TestCase
             ],
         ];
 
+        $this->repository->setWeeklyData(collect($weeklyData));
+
         $expected = [
             [
                 'onboarding_percentage' => 20,
@@ -64,7 +92,8 @@ class ActivityRepositoryTest extends TestCase
             ],
         ];
 
-        $this->assertEquals(collect($expected), $this->repository->filterOnboardingPercentages(collect($weeklyData)));
+        $this->assertEquals(collect($expected),
+            $this->repository->dropUnusedOnBoardingPercentageData()->getWeeklyData());
     }
 
     /** @test */
@@ -82,6 +111,8 @@ class ActivityRepositoryTest extends TestCase
                 'count'                 => 1,
             ],
         ];
+
+        $this->repository->setWeeklyData(collect($weeklyData));
 
         $expected = [
             [
@@ -126,7 +157,8 @@ class ActivityRepositoryTest extends TestCase
             ],
         ];
 
-        $this->assertEquals($expected, $this->repository->addMissingPercentages(collect($weeklyData))->toArray());
+        $this->assertEquals($expected,
+            $this->repository->addMissingOnBoardingPercentageData()->getWeeklyData()->toArray());
     }
 
     /** @test */
@@ -145,6 +177,8 @@ class ActivityRepositoryTest extends TestCase
             ],
         ];
 
+        $this->repository->setWeeklyData(collect($weeklyData));
+
         $expected = [
             [
                 'onboarding_percentage' => 20,
@@ -160,7 +194,7 @@ class ActivityRepositoryTest extends TestCase
             ],
         ];
 
-        $this->assertEquals(collect($expected), $this->repository->calculateTotalCountPerStep(collect($weeklyData)));
+        $this->assertEquals(collect($expected), $this->repository->calculateTotalCountPerWeeklyStep()->getWeeklyData());
     }
 
     /** @test */
