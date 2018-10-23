@@ -92,7 +92,8 @@ class ActivityRepositoryTest extends TestCase
             ],
         ];
 
-        $this->assertEquals(collect($expected), $this->repository->dropUnusedOnBoardingPercentageData());
+        $this->assertEquals(collect($expected),
+            $this->repository->dropUnusedOnBoardingPercentageData()->getWeeklyData());
     }
 
     /** @test */
@@ -156,7 +157,8 @@ class ActivityRepositoryTest extends TestCase
             ],
         ];
 
-        $this->assertEquals($expected, $this->repository->addMissingPercentages()->toArray());
+        $this->assertEquals($expected,
+            $this->repository->addMissingOnBoardingPercentageData()->getWeeklyData()->toArray());
     }
 
     /** @test */
@@ -192,7 +194,7 @@ class ActivityRepositoryTest extends TestCase
             ],
         ];
 
-        $this->assertEquals(collect($expected), $this->repository->calculateTotalCountPerStep());
+        $this->assertEquals(collect($expected), $this->repository->calculateTotalCountPerWeeklyStep()->getWeeklyData());
     }
 
     /** @test */

@@ -20,7 +20,7 @@ class CollectionServiceProvider extends ServiceProvider
             });
         });
 
-        Collection::macro('calculateTotalCountPerStep', function () {
+        Collection::macro('calculateTotalCountPerWeeklyStep', function () {
             return $this->map(function ($data) {
                 $data['totalCount'] = $this
                         ->where('onboarding_percentage', '>', $data['onboarding_percentage'])
